@@ -9,15 +9,15 @@ api.z = 0
 
 api.waypoints = {}
 
-function api:fwd(distance=1)
-  if api.direction == 0 then
-    api.x = api.x + distance
-  elseif api.direction == 1 then
-    api.y = api.y + distance
-  elseif api.direction == 2 then
-    api.x = api.x - distance
-  elseif api.direction == 3 then
-    api.y = api.y - distance
+function api:forward(distance=1)
+  if self.direction == 0 then
+    self.x = self.x + distance
+  elseif self.direction == 1 then
+    self.y = self.y + distance
+  elseif self.direction == 2 then
+    self.x = self.x - distance
+  elseif self.direction == 3 then
+    self.y = self.y - distance
   end
 
   for i = 0, distance do
@@ -26,14 +26,14 @@ function api:fwd(distance=1)
 end
 
 function api:back(distance=1)
-  if api.direction == 0 then
-    api.x = api.x - distance
-  elseif api.direction == 1 then
-    api.y = api.y - distance
-  elseif api.direction == 2 then
-    api.x = api.x + distance
-  elseif api.direction == 3 then
-    api.y = api.y + distance
+  if self.direction == 0 then
+    self.x = self.x - distance
+  elseif self.direction == 1 then
+    self.y = self.y - distance
+  elseif self.direction == 2 then
+    self.x = self.x + distance
+  elseif self.direction == 3 then
+    self.y = self.y + distance
   end
 
   for i = 0, distance do
@@ -42,7 +42,7 @@ function api:back(distance=1)
 end
 
 function api:up(distance=1)
-  api.z = api.z + distance
+  self.z = self.z + distance
 
   for i = 0, distance do
   rob.up()
@@ -50,7 +50,7 @@ function api:up(distance=1)
 end
 
 function api:down(distance=1)
-  api.z = api.z - distance
+  self.z = self.z - distance
 
   for i = 0, distance do
   rob.down()
@@ -73,10 +73,16 @@ function api:turnRight()
   rob.turnRight()
 end
 
+api.fd = api.forward
+api.bk = api.back
+api.dn = api.down
+api.lt = api.turnLeft
+api.rt = api.turnRight
+
 function api:addWaypoint(x, y, z)
-  x = x or api.x
-  y = y or api.y
-  z = z or api.z
+  x = x or self.x
+  y = y or self.y
+  z = z or self.z
 
   waypoints[#waypoints + 1] = {
     x = x,
@@ -92,8 +98,8 @@ function api:goto(waypoint, y, z)
     y = waypoint.z
   elseif typeof(waypoint) == 'number' then
     x = waypoint
-    y = y or api.y
-    z = z or api.z
+    y = y or self.y
+    z = z or self.z
   else
     error('invalid call')
   end
