@@ -9,7 +9,8 @@ api.z = 0
 
 api.waypoints = {}
 
-function api:forward(distance=1)
+function api:forward(distance)
+  distance = distance or 1
   if self.direction == 0 then
     self.x = self.x + distance
   elseif self.direction == 1 then
@@ -25,7 +26,8 @@ function api:forward(distance=1)
   end
 end
 
-function api:back(distance=1)
+function api:back(distance)
+  distance = distance or 1
   if self.direction == 0 then
     self.x = self.x - distance
   elseif self.direction == 1 then
@@ -41,7 +43,8 @@ function api:back(distance=1)
   end
 end
 
-function api:up(distance=1)
+function api:up(distance)
+  distance = distance or 1
   self.z = self.z + distance
 
   for i = 0, distance do
@@ -49,7 +52,8 @@ function api:up(distance=1)
   end
 end
 
-function api:down(distance=1)
+function api:down(distance)
+  distance = distance or 1
   self.z = self.z - distance
 
   for i = 0, distance do
@@ -85,7 +89,7 @@ function api:addWaypoint(x, y, z)
   }
 end
 
-function api:goto(waypoint, y, z)
+function api:goTo(waypoint, y, z)
   if typeof(waypoint) == 'table' then
     x = waypoint.x
     y = waypoint.y
@@ -100,6 +104,8 @@ function api:goto(waypoint, y, z)
 
 
 end
+
+api["goto"] = api.goTo
 
 
 return api
