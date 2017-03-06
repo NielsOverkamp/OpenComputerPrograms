@@ -58,18 +58,12 @@ function api:down(distance=1)
 end
 
 function api:turnLeft()
-  direction = direction - 1
-  if direction < 0 then
-    direction = 3
-  end
+  direction = (direction - 1) % 4
   rob.turnLeft()
 end
 
 function api:turnRight()
-  direction = direction + 1
-  if direction > 3 then
-    direction = 0
-  end
+  direction = (direction + 1) % 4
   rob.turnRight()
 end
 
