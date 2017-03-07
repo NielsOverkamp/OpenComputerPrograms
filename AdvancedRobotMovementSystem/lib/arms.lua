@@ -21,7 +21,7 @@ function api:forward(distance)
     self.y = self.y - distance
   end
 
-  for i = 0, distance do
+  for i = 1, distance do
     rob.forward()
   end
 end
@@ -38,7 +38,7 @@ function api:back(distance)
     self.y = self.y + distance
   end
 
-  for i = 0, distance do
+  for i = 1, distance do
     rob.back()
   end
 end
@@ -47,7 +47,7 @@ function api:up(distance)
   distance = distance or 1
   self.z = self.z + distance
 
-  for i = 0, distance do
+  for i = 1, distance do
   rob.up()
   end
 end
@@ -56,18 +56,18 @@ function api:down(distance)
   distance = distance or 1
   self.z = self.z - distance
 
-  for i = 0, distance do
+  for i = 1, distance do
   rob.down()
   end
 end
 
 function api:turnLeft()
-  direction = (direction - 1) % 4
+  self.direction = (self.direction - 1) % 4
   rob.turnLeft()
 end
 
 function api:turnRight()
-  direction = (direction + 1) % 4
+  self.direction = (self.direction + 1) % 4
   rob.turnRight()
 end
 
