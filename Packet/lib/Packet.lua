@@ -1,92 +1,173 @@
-Packet = {}
+local WordList = {}
 
-
-function Packet:new()
-  packet = {
-    __length = 0,
+function WordList:new(wordLength)
+  local wordList = {
+    __n = 0,
+    __wordLength = wordLength or 8,
     fields = {}
   }
-  setmetatable(packet, self)
+  setmetatable(wordList, self)
   self.__index = self
-  return packet
+  return wordList
 end
 
-Packet.NumberField32 = {}
-
-function Packet.NumberField32:new(number, lengthInBits)
-  field = {
-    number = number,
-    lengthInBits = lengthInBits
-  }
-  setmetatable(field, self)
-  self.__index = self
-  return field
+function WordList:addNumber32Field(lengthInWords, number)
+  self.fields[#self.fields + 1] = self.NumberField32:new(lengthInWords, number)
+  self.__n = self.__n + field:getWordCount()
 end
 
-function Packet.NumberField32:getBitAt(disp)
-  return bit32.band(bit32.rshift(self.number, disp),1)
-end
+WordList.NumberField32 = {
+  new =
+  function (self, lengthInWords, number)
+    number = number or 0
+    field = {
+      lengthInWords = lengthInWords,
+      number = number,
+    }
+    setmetatable(field, self)
+    self.__index = self
+    return field
+  end,
 
-function Packet.NumberField32:setBitAt(disp, value)
-  self.number = self.number + bit32.lshift(bit32.band(value,1),disp)
-end
+  getWord =
+  function (self, index, wordLength)
+    return bit32.band(
+      bit32.rshift(self.number, index * wordLength),
+      bit32.lshift(1, wordLength) - 1)
+  end,
 
-function Packet.NumberField32:length()
-  return self.lengthInBits
-end
+  setWord =
+  function (self, index, wordLength, value)
+    self.number = self.number - self:getWord(index, wordLength)
+    self.number = self.number + bit32.lshift(
+      bit32.band(value, bit32.lshift(1, wordLength) - 1)),
+    index * wordLength
+  end,
 
-function Packet:addFields(...)
-  args = {...}
-  for i=1,#args do
-    field = args[i]
-    checkArg(i,field,"table")
-    self.__length =  self.__length + field:length()
-    self.fields[#self.fields + 1] = field
+  getWordCount =
+  function (self)
+    return self.lengthInWords
   end
-end
+}
 
-function Packet:getStringRepresentation()
-  result = ""
-  currentCharInByte = 0
-  bitPointer = 0
+function WordList:getStringRepresentation()
+  local result = ""
+  local currentCharInByte = 0
+  local byteBitPointer = 0
   for _, field in ipairs(self.fields) do
-    for i = 0, (field:length() - 1) do
-      currentCharInByte = currentCharInByte +
-        bit32.lshift(field:getBitAt(i),bitPointer)
-      bitPointer = bitPointer + 1
-      if bitPointer >= 8 then
-        bitPointer = 0
+    for index = 0, (field:getWordCount() - 1) do
+      local word = field:getWord(index, self.__wordLength)
+
+      if byteBitPointer >= 8 then
+        byteBitPointer = 0
         result = result .. string.char(currentCharInByte)
         currentCharInByte = 0
       end
+
+      if (8 - byteBitPointer ) >= self.__wordLength then
+        currentCharInByte = currentCharInByte +
+        bit32.lshift(word, byteBitPointer)
+        byteBitPointer = byteBitPointer + self.__wordLength
+      else
+        local wordBitPointer = 0
+        currentCharInByte = currentCharInByte + bit32.lshift(
+          bit32.band(bit32.rshift(word,wordBitPointer), bit32.lshift(1, 7 - byteBitPointer)), byteBitPointer
+        )
+        wordBitPointer = wordBitPointer + 8 - byteBitPointer
+        byteBitPointer = 0
+        result = result .. string.char(currentCharInByte)
+        currentCharInByte = 0
+        while (wordBitPointer < self.__wordLength) do
+          result = result .. string.char(
+            bit32.band(bit32.rshift(word,wordBitPointer), bit32.lshift(1, 7))
+          )
+          wordBitPointer = wordBitPointer + 8
+        end
+        byteBitPointer = wordBitPointer - self.__wordLength
+        wordBitPointer = 0
+      end
     end
+    result = result .. string.char(currentCharInByte)
   end
-  result = result .. string.char(currentCharInByte)
   return result
 end
 
-function Packet:readFromString(packetString)
-  print("bitP","i","number")
-  byteArray = {string.byte(packetString, 1, #packetString)}
-  charPointer = 1
-  bitPointer = 0
+function WordList:fillInFromString(wordListString)
+  local byteArray = {string.byte(wordListString, 1, #wordListString)}
+  local byteArrayPointer = 1
+  local byteBitPointer = 0
   for _, field in ipairs(self.fields) do
-    for i = 0, (field:length()-1) do
-      field:setBitAt(i, bit32.rshift(byteArray[charPointer], bitPointer))
-      bitPointer = bitPointer + 1
-      print(bitPointer, i, field.number)
-      if bitPointer >= 8 then
-        bitPointer = 0
-        charPointer = charPointer + 1
-        if (charPointer > #byteArray) then
-          return
+    for index = 0, (field:getWordCount() - 1) do
+      if byteBitPointer >= 8 then
+        byteBitPointer = 0
+        byteArrayPointer = byteArrayPointer + 1
+      end
+
+      if (8 - byteBitPointer) <= self.__wordLength then
+        currentCharInByte = currentCharInByte +
+        bit32.lshift(word, byteBitPointer)
+        byteBitPointer = byteBitPointer + self.__wordLength
+      else
+        local wordBitPointer = 0
+        currentCharInByte = currentCharInByte + bit32.lshift(
+          bit32.band(bit32.rshift(word,wordBitPointer), bit32.lshift(1, 7 - byteBitPointer)), byteBitPointer
+        )
+        wordBitPointer = wordBitPointer + 8 - byteBitPointer
+        byteBitPointer = 0
+        result = result .. string.char(currentCharInByte)
+        currentCharInByte = 0
+        while (wordBitPointer < self.__wordLength) do
+          result = result .. string.char(
+            bit32.band(bit32.rshift(word,wordBitPointer), bit32.lshift(1, 7))
+          )
+          wordBitPointer = wordBitPointer + 8
+        end
+        byteBitPointer = wordBitPointer - self.__wordLength
+        wordBitPointer = 0
+      end
+    end
+    result = result .. string.char(currentCharInByte)
+  end
+  return result
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  byteArray = {string.byte(wordListString, 1, #wordListString)}
+  fieldBitPointer = 0
+  fieldPointer = 1
+  for _, byte in ipairs(byteArray) do
+    for byteBitPointer = 0, 7 do
+      self.field[fieldPointer]:setBitAt(i, )
+
+      for _, field in ipairs(self.fields) do
+        for i = 0, (field:getWordCount()-1) do
+          field:setBitAt(i, bit32.rshift(byteArray[charPointer], bitPointer))
+          bitPointer = bitPointer + 1
+          if bitPointer >= 8 then
+            bitPointer = 0
+            charPointer = charPointer + 1
+            if (charPointer > #byteArray) then
+              return
+            end
+          end
         end
       end
     end
   end
 end
 
-
-
-
-return Packet
+return WordList
