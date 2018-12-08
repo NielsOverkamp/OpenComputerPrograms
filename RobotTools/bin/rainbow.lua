@@ -3,7 +3,7 @@ args = {...}
 startColor = {}
 if (#args >= 1) then
   if #args >= 3 then
-    startColor = {r=tonumber(args[1]),g=tonumber(args[2]),b=tonumber(a  rgs[3])}
+    startColor = {r=tonumber(args[1]),g=tonumber(args[2]),b=tonumber(args[3])}
   else
     startColor = light.tools.toRGB(args[1])
   end

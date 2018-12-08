@@ -1,2 +1,4 @@
 *.save
 *.txt
+/.idea/
+.attach_pid*
